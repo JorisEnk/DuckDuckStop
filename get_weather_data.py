@@ -2,7 +2,7 @@ import requests
 import pandas as pd
 from datetime import date, timedelta
 
-# Koordinaten Freiburg
+# coordinates Freiburg
 lat, lon = 47.9990, 7.8421
 
 today = date.today()
@@ -20,7 +20,6 @@ data = requests.get(url).json()
 df = pd.DataFrame(data['hourly'])
 df['time'] = pd.to_datetime(df['time'])
 
-# Struktur erzeugen
 weather_info = {}
 
 for i, row in df.iterrows():
@@ -30,7 +29,7 @@ for i, row in df.iterrows():
     temp = row['temperature_2m']
     diffuse = row['diffuse_radiation']
     
-    # einfache Heuristik zur Einstrahlungsqualität
+    # simple rules for sunlight and action
     if direct == 0:
         sunlight = False
         strength = "none"
@@ -48,7 +47,7 @@ for i, row in df.iterrows():
         strength = "high"
         action = "feed_in"
 
-    # Dictionary füllen
+    # dict
     weather_info[time] = {
         "direct_radiation": direct,
         "diffuse_radiation": diffuse,
@@ -59,13 +58,9 @@ for i, row in df.iterrows():
         "recommended_action": action
     }
 
-# Beispielausgabe
-for t in list(weather_info)[:5]:
-    print(f"{t} -> {weather_info[t]}")
-
-# ausgabe für einen Tag
+# save data for today
 day = today.isoformat()
-print(f"\nWetterdaten für {day}:")
+#print(f"\nWetterdaten für {day}:")
 for t in list(weather_info):
     if t.startswith(day):
         print(f"{t} -> {weather_info[t]}")
