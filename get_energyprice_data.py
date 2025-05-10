@@ -28,7 +28,7 @@ def get_awattar_prices(start=None, end=None):
 
 if __name__ == "__main__":
     # Optional: Zeitraum definieren (z. B. heute + morgen)
-    now = datetime.datetime.now()
-    tomorrow = now + datetime.timedelta(days=1)
+    now = datetime.datetime.now() - datetime.timedelta(days=2)
+    tomorrow = now + datetime.timedelta(days=2)
 
     get_awattar_prices(start=now, end=tomorrow)
