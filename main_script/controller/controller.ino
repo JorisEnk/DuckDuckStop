@@ -19,6 +19,7 @@ extern float getCurrentPrice();
 extern float getCurrentRadiation();
 extern void toggleShelly(bool state);
 extern void toggleShellyBulb(bool state);
+extern float getForecastLoad();
 
 void setup() {
   Serial.begin(115200);
