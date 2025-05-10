@@ -1,6 +1,5 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
-#include <time.h>
 
 // WLAN-Daten
 const char* ssid = "shellycolorbulb-4091515826AA";
@@ -8,9 +7,6 @@ const char* password = "";  // leer lassen, falls Shelly ohne Passwort läuft
 
 // Shelly IP
 const char* shelly_ip = "192.168.33.1";
-
-unsigned long lastToggleTime = 0;
-bool isOn = false;
 
 void setup() {
   Serial.begin(115200);
@@ -30,30 +26,29 @@ void setup() {
   Serial.println("\nVerbunden mit Shelly!");
   Serial.print("IP Adresse: ");
   Serial.println(WiFi.localIP());
+
+  // Lampe auf Rot setzen und einschalten
+  setColorRed();
 }
 
 void loop() {
-  unsigned long currentTime = millis();
-
-  if (currentTime - lastToggleTime >= 15000) { // alle 15 Sekunden
-    toggleBulb();
-    lastToggleTime = currentTime;
-  }
+  // nichts tun
 }
 
-void toggleBulb() {
+void setColorRed() {
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
-    String url = String("http://") + shelly_ip + "/light/0?turn=" + (isOn ? "off" : "on");
+
+    // Lampe einschalten und Farbe auf Rot setzen
+    String url = String("http://") + shelly_ip + "/light/0?turn=on&red=0&green=255&blue=0";
 
     http.begin(url);
     int httpCode = http.GET();
 
     if (httpCode > 0) {
-      Serial.printf("HTTP %d: Lampe %s\n", httpCode, isOn ? "aus" : "an");
-      isOn = !isOn;
+      Serial.printf("Lampe auf Rot gesetzt. HTTP Code: %d\n", httpCode);
     } else {
-      Serial.printf("Fehler: %s\n", http.errorToString(httpCode).c_str());
+      Serial.printf("Fehler beim Setzen der Farbe: %s\n", http.errorToString(httpCode).c_str());
     }
 
     http.end();

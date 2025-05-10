@@ -47,6 +47,38 @@ void connectToHomeWiFi() {
     Serial.println("\n❌ Heimnetzverbindung fehlgeschlagen");
   }
 }
+void setShellyBulbColor(int r, int g, int b) {
+  connectToShellyBulbWiFi();
+
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("❌ Keine WLAN-Verbindung zur ShellyBulb");
+    return;
+  }
+
+  HTTPClient http;
+
+  // Setze RGB-Modus + Farbe + Helligkeit (100 %)
+  String url = String("http://") + shellyBulbIP +
+               "/light/0?turn=on&mode=color&red=" + String(r) +
+               "&green=" + String(g) +
+               "&blue=" + String(b) +
+               "&gain=100";  // oder: "&brightness=100" je nach Firmware
+
+  Serial.println("📡 Sende an ShellyBulb: " + url);
+  http.begin(url);
+  int httpCode = http.GET();
+
+  if (httpCode > 0) {
+    Serial.printf("💡 RGB gesetzt: R=%d G=%d B=%d (HTTP %d)\n", r, g, b, httpCode);
+  } else {
+    Serial.printf("❌ Fehler beim Setzen der Farbe: %s\n", http.errorToString(httpCode).c_str());
+  }
+
+  http.end();
+
+  connectToHomeWiFi();
+}
+
 
 // Glühbirne schalten
 void toggleShellyBulb(bool state) {
