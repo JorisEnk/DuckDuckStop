@@ -18,6 +18,7 @@ const float radiationLimit = 200.0;    // W/m²
 extern float getCurrentPrice();
 extern float getCurrentRadiation();
 extern void toggleShelly(bool state);
+extern void toggleShellyBulb(bool state);
 
 void setup() {
   Serial.begin(115200);
@@ -25,7 +26,7 @@ void setup() {
 
   // WLAN verbinden
   WiFi.begin(ssid, password);
-  Serial.print("Verbinde mit WLAN");
+  Serial.print("🔌 Verbinde mit WLAN");
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
@@ -39,6 +40,7 @@ void setup() {
     Serial.println("❌ Keine Zeit verfügbar");
     return;
   }
+  Serial.println("🕒 Zeit synchronisiert");
 }
 
 void loop() {
@@ -46,12 +48,12 @@ void loop() {
   float radiation = getCurrentRadiation();
 
   Serial.printf("\n📈 Preis: %.2f €/MWh, ☀️ Strahlung: %.1f W/m²\n", price, radiation);
-  
-  if (price <= priceLimit && radiation >= radiationLimit) {
-    toggleShelly(true);
-  } else {
-    toggleShelly(false);
-  }
 
-  delay(30 * 60 * 1000); // alle 30 Minuten wiederholen
+  bool shouldTurnOn = price <= priceLimit && radiation >= radiationLimit;
+
+  // Beide Geräte steuern
+  toggleShelly(shouldTurnOn);  // Steckdose schalten
+  toggleShellyBulb(shouldTurnOn);  // Glühbirne schalten
+
+  delay(1 * 60 * 1000); // alle 30 Minuten wiederholen
 }

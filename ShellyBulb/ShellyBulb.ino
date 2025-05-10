@@ -3,7 +3,7 @@
 #include <time.h>
 
 // WLAN-Daten
-const char* ssid = "shellycolorbulb-485519FC00C9";
+const char* ssid = "shellycolorbulb-4091515826AA";
 const char* password = "";  // leer lassen, falls Shelly ohne Passwort läuft
 
 // Shelly IP
