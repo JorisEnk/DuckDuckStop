@@ -1,24 +1,43 @@
 import requests
 import pandas as pd
-from datetime import date, timedelta
+from datetime import datetime, timedelta
+import json
 
-# coordinates Freiburg
-lat, lon = 47.9990, 7.8421
+# location dynamically determined by IP address
+def get_location():
+    try:
+        response = requests.get("https://ipinfo.io/json")
+        data = response.json()
+        lat, lon = map(float, data["loc"].split(","))
+        print(f"Standort ermittelt: {lat}, {lon}")
+        print(f"Standort: {data['city']}, {data['region']}, {data['country']}")
+        return lat, lon
+    except:
+        print("Standort konnte nicht automatisch ermittelt werden. Fallback: Freiburg.")
+        return 47.9990, 7.8421
 
-today = date.today()
-end = today + timedelta(days=7)
+# next 12h weather data
+now = datetime.now()
+now_rounded = now.replace(minute=0, second=0, microsecond=0)  # auf volle Stunde runden
+end = now_rounded + timedelta(hours=12)
 
+lat, lon = get_location()
+
+# Open-Meteo API URL
 url = (
     f"https://api.open-meteo.com/v1/forecast?"
     f"latitude={lat}&longitude={lon}"
     "&hourly=temperature_2m,cloudcover,direct_radiation,diffuse_radiation"
-    f"&start_date={today}&end_date={end}"
+    f"&start_date={now_rounded.date()}&end_date={(end + timedelta(days=1)).date()}"
     "&timezone=Europe%2FBerlin"
 )
 
 data = requests.get(url).json()
 df = pd.DataFrame(data['hourly'])
 df['time'] = pd.to_datetime(df['time'])
+
+# only keep data for the next 12h
+df = df[(df['time'] >= now_rounded) & (df['time'] <= end)]
 
 weather_info = {}
 
@@ -28,8 +47,7 @@ for i, row in df.iterrows():
     cloud = row['cloudcover']
     temp = row['temperature_2m']
     diffuse = row['diffuse_radiation']
-    
-    # simple rules for sunlight and action
+
     if direct == 0:
         sunlight = False
         strength = "none"
@@ -47,7 +65,6 @@ for i, row in df.iterrows():
         strength = "high"
         action = "feed_in"
 
-    # dict
     weather_info[time] = {
         "direct_radiation": direct,
         "diffuse_radiation": diffuse,
@@ -58,12 +75,10 @@ for i, row in df.iterrows():
         "recommended_action": action
     }
 
-# save data for today
-day = today.isoformat()
-#print(f"\nWetterdaten für {day}:")
-for t in list(weather_info):
-    if t.startswith(day):
-        print(f"{t} -> {weather_info[t]}")
-# save to json file
-with open(f"weather_data_{day}.json", "w") as f:
-    f.write(str(weather_info))
+# Output
+print(f"\nWetterdaten von {now_rounded} bis {end}:\n")
+for t in sorted(weather_info.keys()):
+    print(f"{t} -> {weather_info[t]}")
+
+with open("weather_forecast_24h.json", "w") as f:
+    json.dump(weather_info, f, indent=2)
