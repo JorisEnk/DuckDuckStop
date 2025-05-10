@@ -46,43 +46,36 @@ void setup() {
 }
 
 // Hilfsfunktion zum Beschränken eines Werts zwischen min und max
-float constrain(float value, float min, float max) {
-    if (value < min) return min;
-    if (value > max) return max;
-    return value;
+float constrainFloat(float value, float min, float max) {
+  if (value < min) return min;
+  if (value > max) return max;
+  return value;
 }
 
 void berechneRGB(float radiation, float wind, float grid, int* r, int* g, int* b) {
-    // Boolesche Auswertung
-    int gridBool = (grid > 5000) ? 1 : 0;
-    int radiationBool = (radiation > 250) ? 1 : 0;
-    int windBool = (wind > 10 && wind < 90) ? 1 : 0;
-    int erneuerbarBool = radiationBool || windBool;
+  int gridBool = (grid > 5000) ? 1 : 0;
+  int radiationBool = (radiation > 250) ? 1 : 0;
+  int windBool = (wind > 10 && wind < 90) ? 1 : 0;
+  int erneuerbarBool = radiationBool || windBool;
 
-    // Wenn kein Beitrag von Erneuerbaren → ROT
-    if (!erneuerbarBool) {
-        *r = 255;
-        *g = 0;
-        *b = 0;
-        return;
-    }
+  if (!erneuerbarBool) {
+      *r = 255; *g = 0; *b = 0;
+      return;
+  }
 
-    // Qualität der Erneuerbaren (0..1)
-    float radQual = constrain(radiation / 1000.0, 0.0, 1.0);
-    float windQual = constrain((wind - 10.0) / 80.0, 0.0, 1.0);
-    float qualitaet = 0.5 * radQual + 0.5 * windQual;
+  float radQual = constrainFloat(radiation / 1000.0, 0.0, 1.0);
+  float windQual = constrainFloat((wind - 10.0) / 80.0, 0.0, 1.0);
+  float qualitaet = 0.5 * radQual + 0.5 * windQual;
 
-    if (gridBool) {
-        // GRÜNTÖNE: Dunkelgrün (schlecht) bis Hellgrün (gut)
-        *r = (int)(50 * (1 - qualitaet));      // max 50 rot-Anteil
-        *g = (int)(180 + 75 * qualitaet);      // 180–255 grün-Anteil
-        *b = 0;
-    } else {
-        // GELB bis leicht ROT (schlecht): von hellgelb bis orange-rot
-        *r = (int)(255);
-        *g = (int)(230 - 80 * (1 - qualitaet)); // 150–230 grün-Anteil
-        *b = 0;
-    }
+  if (gridBool) {
+      *r = (int)(50 * (1 - qualitaet));
+      *g = (int)(180 + 75 * qualitaet);
+      *b = 0;
+  } else {
+      *r = 255;
+      *g = (int)(230 - 80 * (1 - qualitaet));
+      *b = 0;
+  }
 }
 
 
@@ -95,7 +88,7 @@ void loop() {
   Serial.printf("\n🌬️ Wind: %.2f km/h, ☀️ Strahlung: %.2f W/m², ⚡ Netzlast: %.2f MW\n", wind, radiation, grid);
 
   int r, g, b;
-  berechneRGB(radiation, wind, grid, r, g, b);
+  berechneRGB(radiation, wind, grid, &r, &g, &b);
   setShellyBulbColor(r, g, b);
 
   delay(1 * 60 * 1000);  // alle 30 Minuten wiederholen
