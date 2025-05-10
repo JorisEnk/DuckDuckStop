@@ -19,7 +19,7 @@ def get_location():
 # next 12h weather data
 now = datetime.now()
 now_rounded = now.replace(minute=0, second=0, microsecond=0)  # auf volle Stunde runden
-end = now_rounded + timedelta(hours=12)
+end = now_rounded + timedelta(hours=24)
 
 lat, lon = get_location()
 
@@ -27,7 +27,7 @@ lat, lon = get_location()
 url = (
     f"https://api.open-meteo.com/v1/forecast?"
     f"latitude={lat}&longitude={lon}"
-    "&hourly=temperature_2m,cloudcover,direct_radiation,diffuse_radiation"
+    "&hourly=shortwave_radiation,wind_speed_120m,wind_speed_80m"
     f"&start_date={now_rounded.date()}&end_date={(end + timedelta(days=1)).date()}"
     "&timezone=Europe%2FBerlin"
 )
@@ -43,36 +43,14 @@ weather_info = {}
 
 for i, row in df.iterrows():
     time = row['time'].isoformat()
-    direct = row['direct_radiation']
-    cloud = row['cloudcover']
-    temp = row['temperature_2m']
-    diffuse = row['diffuse_radiation']
-
-    if direct == 0:
-        sunlight = False
-        strength = "none"
-        action = "idle"
-    elif direct < 200:
-        sunlight = True
-        strength = "low"
-        action = "store"
-    elif direct < 500:
-        sunlight = True
-        strength = "medium"
-        action = "store"
-    else:
-        sunlight = True
-        strength = "high"
-        action = "feed_in"
+    direct = row['shortwave_radiation']
+    direct = row['wind_speed_120m']
+    direct = row['wind_speed_80m']
 
     weather_info[time] = {
-        "direct_radiation": direct,
-        "diffuse_radiation": diffuse,
-        "temperature": temp,
-        "cloudcover": cloud,
-        "sunlight": sunlight,
-        "sun_strength": strength,
-        "recommended_action": action
+        "shortwave_radiation": direct,
+        "wind_speed_120m": direct,
+        "wind_speed_80m": direct
     }
 
 # Output

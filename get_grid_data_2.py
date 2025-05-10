@@ -23,7 +23,7 @@ except Exception as e:
 
 # Zeitgrenze: jetzt bis 2 Stunden später (UTC, timezone-aware)
 now = datetime.now(timezone.utc)
-future_limit = now + timedelta(hours=3)
+future_limit = now + timedelta(hours=24)
 
 # Forecast filtern
 load_data = data.get("load", [])
