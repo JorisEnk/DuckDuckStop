@@ -44,27 +44,45 @@ void setup() {
   }
   Serial.println("🕒 Zeit synchronisiert");
 }
-void berechneRGB(float radiation, float wind, float grid, int& r, int& g, int& b) {
-  // Normierung
-  float sonne_norm = constrain(radiation / 1000.0, 0.0, 1.0);
-  float wind_norm = (wind >= 10) ? constrain((wind - 10.0) / 80.0, 0.0, 1.0) : 0.0;
-  float netzlast_norm = constrain((grid - 3000.0) / 4000.0, 0.0, 1.0);
-  float netzlast_inv = 1.0 - netzlast_norm;
 
-  // Bewertung
-  float erneuerbare = 0.5 * sonne_norm + 0.5 * wind_norm;
-  float status = erneuerbare * 0.7 + netzlast_inv * 0.3;
+// Hilfsfunktion zum Beschränken eines Werts zwischen min und max
+float constrain(float value, float min, float max) {
+    if (value < min) return min;
+    if (value > max) return max;
+    return value;
+}
 
-  // Farbverlauf berechnen
-  if (status < 0.5) {
-    r = 255;
-    g = int(255 * (status / 0.5));
-    b = 0;
-  } else {
-    r = int(255 * (1 - (status - 0.5) / 0.5));
-    g = 255;
-    b = 0;
-  }
+void berechneRGB(float radiation, float wind, float grid, int* r, int* g, int* b) {
+    // Boolesche Auswertung
+    int gridBool = (grid > 5000) ? 1 : 0;
+    int radiationBool = (radiation > 250) ? 1 : 0;
+    int windBool = (wind > 10 && wind < 90) ? 1 : 0;
+    int erneuerbarBool = radiationBool || windBool;
+
+    // Wenn kein Beitrag von Erneuerbaren → ROT
+    if (!erneuerbarBool) {
+        *r = 255;
+        *g = 0;
+        *b = 0;
+        return;
+    }
+
+    // Qualität der Erneuerbaren (0..1)
+    float radQual = constrain(radiation / 1000.0, 0.0, 1.0);
+    float windQual = constrain((wind - 10.0) / 80.0, 0.0, 1.0);
+    float qualitaet = 0.5 * radQual + 0.5 * windQual;
+
+    if (gridBool) {
+        // GRÜNTÖNE: Dunkelgrün (schlecht) bis Hellgrün (gut)
+        *r = (int)(50 * (1 - qualitaet));      // max 50 rot-Anteil
+        *g = (int)(180 + 75 * qualitaet);      // 180–255 grün-Anteil
+        *b = 0;
+    } else {
+        // GELB bis leicht ROT (schlecht): von hellgelb bis orange-rot
+        *r = (int)(255);
+        *g = (int)(230 - 80 * (1 - qualitaet)); // 150–230 grün-Anteil
+        *b = 0;
+    }
 }
 
 
