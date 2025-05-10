@@ -44,7 +44,7 @@ float getCurrentRadiation() {
   JsonArray radiationArray = doc["hourly"]["direct_radiation"];
 
   for (int i = 0; i < timeArray.size(); i++) {
-    if (String(timeArray[i]) == String(now_iso)) {
+    if (timeArray[i].as<String>() == now_iso) {
       float radiation = radiationArray[i];
       http.end();
       return radiation;
