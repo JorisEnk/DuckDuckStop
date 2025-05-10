@@ -46,8 +46,9 @@ void setup() {
 void loop() {
   float price = getCurrentPrice();
   float radiation = getCurrentRadiation();
+  float grid = getForecastLoad();
 
-  Serial.printf("\n📈 Preis: %.2f €/MWh, ☀️ Strahlung: %.1f W/m²\n", price, radiation);
+  Serial.printf("\n📈 Preis: %.3f €/MWh, ☀️ Strahlung: %.2f W/m², Grid: %.1f \n", price, radiation, grid);
 
   bool shouldTurnOn = price <= priceLimit && radiation >= radiationLimit;
 
