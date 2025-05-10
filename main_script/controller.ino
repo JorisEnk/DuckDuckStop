@@ -11,8 +11,8 @@ const long gmtOffset_sec = 3600;
 const int daylightOffset_sec = 3600;
 
 // Grenzwerte
-const float priceLimit = 150.0;
-const float radiationLimit = 200.0;
+const float priceLimit = 150.0;        // €/MWh
+const float radiationLimit = 200.0;    // W/m²
 
 // Externe Funktionen
 extern float getCurrentPrice();
@@ -32,30 +32,26 @@ void setup() {
   }
   Serial.println("\n✅ WLAN verbunden.");
 
-  // Zeit holen
+  // Zeit synchronisieren
   configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
   struct tm timeinfo;
   if (!getLocalTime(&timeinfo)) {
     Serial.println("❌ Keine Zeit verfügbar");
     return;
   }
+}
 
-  // Daten holen
+void loop() {
   float price = getCurrentPrice();
   float radiation = getCurrentRadiation();
 
   Serial.printf("\n📈 Preis: %.2f €/MWh, ☀️ Strahlung: %.1f W/m²\n", price, radiation);
-
-  // Entscheidung
+  
   if (price <= priceLimit && radiation >= radiationLimit) {
     toggleShelly(true);
   } else {
     toggleShelly(false);
   }
-}
 
-void loop() {
-  // alle 30 Minuten neu auswerten?
-  delay(30 * 60 * 1000);
-  setup();  // erneut aufrufen
+  delay(30 * 60 * 1000); // alle 30 Minuten wiederholen
 }
