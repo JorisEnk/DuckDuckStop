@@ -51,7 +51,7 @@ void loop() {
   float grid = getForecastLoad();
   float wind = getAverageWindNext8Hours();
 
-  Serial.printf("\n📈 Preis: %.3f €/MWh, ☀️ Strahlung: %.2f W/m², Grid: %.1f \n", price, radiation, grid);
+  Serial.printf("\n Wind: %.4f , Preis: %.3f €/MWh, ☀️ Strahlung: %.2f W/m², Grid: %.1f \n", wind, price, radiation, grid);
 
   bool shouldTurnOn = price <= priceLimit && radiation >= radiationLimit;
 
