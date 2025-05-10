@@ -20,6 +20,7 @@ extern float getCurrentRadiation();
 extern void toggleShelly(bool state);
 extern void toggleShellyBulb(bool state);
 extern float getForecastLoad();
+extern float getAverageWindNext8Hours();
 
 void setup() {
   Serial.begin(115200);
@@ -48,6 +49,7 @@ void loop() {
   float price = getCurrentPrice();
   float radiation = getCurrentRadiation();
   float grid = getForecastLoad();
+  float wind = getAverageWindNext8Hours();
 
   Serial.printf("\n📈 Preis: %.3f €/MWh, ☀️ Strahlung: %.2f W/m², Grid: %.1f \n", price, radiation, grid);
 
