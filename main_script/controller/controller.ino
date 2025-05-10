@@ -77,20 +77,49 @@ void berechneRGB(float radiation, float wind, float grid, int* r, int* g, int* b
       *b = 0;
   }
 }
+void runRGBTests() {
+  struct TestSet {
+    float radiation;
+    float wind;
+    float grid;
+  };
+
+  TestSet testValues[] = {
+    {50,  5,  6000},
+    {300, 20, 5500},
+    {700, 50, 4500},
+    {1000, 80, 3000},
+    {0,    0,  7000}
+  };
+
+  const int numTests = sizeof(testValues) / sizeof(TestSet);
+
+  for (int i = 0; i < numTests; i++) {
+    float rads = testValues[i].radiation;
+    float wind = testValues[i].wind;
+    float grid = testValues[i].grid;
+
+    int r, g, b;
+    berechneRGB(rads, wind, grid, &r, &g, &b);
+
+    Serial.printf("\n🧪 Test %d\n☀️ %.1f W/m², 🌬️ %.1f km/h, ⚡ %.1f MW\n", i + 1, rads, wind, grid);
+    Serial.printf("🎨 RGB: R=%d G=%d B=%d\n", r, g, b);
+
+    setShellyBulbColor(r, g, b);
+
+    delay(15000);  // 15 Sekunden Pause
+  }
+
+  Serial.println("\n✅ Alle RGB-Tests abgeschlossen.");
+}
 
 
 void loop() {
-  float price = getCurrentPrice();
-  float radiation = getCurrentRadiation();
-  float grid = getForecastLoad();
-  float wind = getAverageWindNext8Hours();
+  runRGBTests();
 
-  Serial.printf("\n🌬️ Wind: %.2f km/h, ☀️ Strahlung: %.2f W/m², ⚡ Netzlast: %.2f MW\n", wind, radiation, grid);
-
-  int r, g, b;
-  berechneRGB(radiation, wind, grid, &r, &g, &b);
-  setShellyBulbColor(r, g, b);
-
-  delay(1 * 60 * 1000);  // alle 30 Minuten wiederholen
+  while (true) {
+    delay(1000);  // Tests nur einmal ausführen
+  }
 }
+
 
