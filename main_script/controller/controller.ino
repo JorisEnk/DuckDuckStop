@@ -53,29 +53,24 @@ float constrainFloat(float value, float min, float max) {
 }
 
 void berechneRGB(float radiation, float wind, float grid, int* r, int* g, int* b) {
-  int gridBool = (grid > 5000) ? 1 : 0;
-  int radiationBool = (radiation > 250) ? 1 : 0;
-  int windBool = (wind > 10 && wind < 90) ? 1 : 0;
-  int erneuerbarBool = radiationBool || windBool;
+// Normierungen
+float rad_norm = constrainFloat(radiation / 1000.0, 0.0, 1.0);
+float wind_norm = constrainFloat((wind - 10.0) / 80.0, 0.0, 1.0);
+float grid_norm = constrainFloat((grid - 3500.0) / 3500.0, 0.0, 1.0);
 
-  if (!erneuerbarBool) {
-      *r = 255; *g = 0; *b = 0;
-      return;
-  }
-
-  float radQual = constrainFloat(radiation / 1000.0, 0.0, 1.0);
-  float windQual = constrainFloat((wind - 10.0) / 80.0, 0.0, 1.0);
-  float qualitaet = 0.5 * radQual + 0.5 * windQual;
-
-  if (gridBool) {
-      *r = (int)(50 * (1 - qualitaet));
-      *g = (int)(180 + 75 * qualitaet);
-      *b = 0;
-  } else {
-      *r = 255;
-      *g = (int)(230 - 80 * (1 - qualitaet));
-      *b = 0;
-  }
+// Sonderfall: Alles schlecht → Rot
+if (rad_norm < 0.05 && wind_norm < 0.05 && grid_norm < 0.05) {
+    *r = 255;
+    *g = 255;
+    *b = 0;
+    return;
+}else{
+  float qualitaet = 0.5 * rad_norm + 0.5 * wind_norm;
+     // RGB-Berechnung
+    *b = 0;
+    *r = (int)(255.0 * fabs(grid_norm - qualitaet));
+    *g = (int)(255.0 * qualitaet);
+}
 }
 void runRGBTests() {
   struct TestSet {
@@ -113,6 +108,54 @@ void runRGBTests() {
   Serial.println("\n✅ Alle RGB-Tests abgeschlossen.");
 }
 
+void runRGBTests() {
+  struct TestSet {
+    float radiation;
+    float wind;
+    float grid;
+  };
+
+  TestSet testValues[] = {
+    // Beste Bedingungen: hohe Strahlung, hoher Wind, gutes Netz
+    {1000, 90, 7000},
+    // Nur hohe Strahlung
+    {1000, 0, 3500},
+    // Nur hoher Wind
+    {0, 90, 3500},
+    // Nur gutes Netz
+    {0, 0, 7000},
+    // Durchschnittliche Bedingungen
+    {500, 40, 3500},
+    // Hohe Netzlast, gute EE
+    {800, 60, 1000},
+    // Alles maximal schlecht
+    {0, 0, 0},
+    // Extrem hoher Netzoutput
+    {1000, 80, 8000},
+    // Negative Werte (zur Validierung der constrain-Funktion)
+    {-50, -10, -500},
+    // Werte exakt auf den Schwellen
+    {50, 10, 3500}
+  };
+
+  const int numTests = sizeof(testValues) / sizeof(TestSet);
+
+  for (int i = 0; i < numTests; i++) {
+    float rads = testValues[i].radiation;
+    float wind = testValues[i].wind;
+    float grid = testValues[i].grid;
+
+    int r, g, b;
+    berechneRGB(rads, wind, grid, &r, &g, &b);
+
+    Serial.printf("\n🧪 Test %d\n☀️ %.1f W/m², 🌬️ %.1f km/h, ⚡ %.1f MW\n", i + 1, rads, wind, grid);
+    Serial.printf("🎨 RGB: R=%d G=%d B=%d\n", r, g, b);
+
+    setShellyBulbColor(r, g, b);
+
+    delay(15000);  // 15 Sekunden Pause
+  }
+}
 
 void loop() {
   runRGBTests();
