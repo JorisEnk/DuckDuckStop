@@ -1,6 +1,6 @@
 # Optimizing Small-Scale Storage and Plug-In Solar for Grid Stability and Cost Savings
 
-## 🔍 Problem Statement  
+## Problem Statement  
 Small-scale plug-in solar systems with battery storage are often not optimized to support grid stability. Prosumers typically charge batteries based on electricity prices rather than real-time grid conditions, potentially contributing to grid stress during peak solar production. Currently, there are no simple dynamic incentives or guidance for prosumers to adjust behavior to align with grid needs, resulting in inefficiencies and missed opportunities to use excess renewable energy.
 
 ## Hackathon Challenge  
@@ -35,7 +35,7 @@ We developed a lightweight, accessible system using a **low-cost ESP32 microcont
    - 🟡 **Yellow**: Neutral – consider user preferences or battery status.
 3. **Smart Algorithm on ESP32**: It pulls real-time data from grid APIs and weather forecasts to determine optimal feed-in timing based on demand and renewable energy availability, customized for the user's location.
 
-### 🔧 Why This Works
+### Why This Works
 - **Simplicity**: No complex home automation system required  
 - **Affordability**: ESP32 and Shelly bulbs are inexpensive and widely available  
 - **User agency**: Clear visual signals guide behavior without removing control  
@@ -78,5 +78,5 @@ Click **Connect**.
 ### 4. Watch the Bulbs React
 Once connected to the internet, the ESP32 will begin pulling real-time grid and weather data. The Shelly smart bulbs will reflect the current feed-in recommendation through simple color-coded signals.
 
-> 🎯 *This lightweight setup gives you real-time visual feedback without needing an app, Home Assistant, or other automation platforms.*
+>  *This lightweight setup gives you real-time visual feedback without needing an app, Home Assistant, or other automation platforms.*
 
