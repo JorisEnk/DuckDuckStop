@@ -1,21 +1,21 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 
-// WLAN-Daten
-const char* homeSSID = "TP-Link_F574";
-const char* homePASS = "38433948";
+extern String shellyBulbSSID;
+extern String shellyBulbPASS;
+extern String homeSSID;
+extern String homePASS;
+extern String shellyBulbIP;
 
-const char* shellyBulbSSID = "shellycolorbulb-4091515826AA";
-const char* shellyBulbPASS = "";
 
-const char* shellyBulbIP = "192.168.33.1";
-
-// Verbinde mit Shelly-Bulb-WLAN
 void connectToShellyBulbWiFi() {
-  Serial.println("🔄 Verbinde mit ShellyBulb-WLAN...");
+  Serial.println("Connect to ShellyBulb WiFi...");
+  Serial.println("SSID: " + shellyBulbSSID);
+  Serial.println("PASS: " + shellyBulbPASS);
+
   WiFi.disconnect(true);
   delay(500);
-  WiFi.begin(shellyBulbSSID, shellyBulbPASS);
+  WiFi.begin(shellyBulbSSID.c_str(), shellyBulbPASS.c_str());
 
   for (int i = 0; i < 20 && WiFi.status() != WL_CONNECTED; i++) {
     delay(500);
@@ -23,18 +23,22 @@ void connectToShellyBulbWiFi() {
   }
 
   if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("\n✅ Verbunden mit ShellyBulb");
+    Serial.println("\n Connected to ShellyBulb");
   } else {
-    Serial.println("\n❌ Verbindung zur ShellyBulb fehlgeschlagen");
+    Serial.println("\n Connection to ShellyBulb failed");
   }
 }
 
-// Verbinde zurück ins Heimnetz
+
 void connectToHomeWiFi() {
-  Serial.println("🔄 Verbinde zurück zum Heimnetz...");
+  Serial.println("Connect to home WiFi...");
+  Serial.println("SSID: " + homeSSID);
+  Serial.println("PASS: " + homePASS);
+
+  Serial.println("Connecting to home WiFi...");
   WiFi.disconnect(true);
   delay(500);
-  WiFi.begin(homeSSID, homePASS);
+  WiFi.begin(homeSSID.c_str(), homePASS.c_str());
 
   for (int i = 0; i < 20 && WiFi.status() != WL_CONNECTED; i++) {
     delay(500);
@@ -42,36 +46,38 @@ void connectToHomeWiFi() {
   }
 
   if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("\n✅ Zurück im Heimnetz");
+    Serial.println("\n back to home WiFi");
   } else {
-    Serial.println("\n❌ Heimnetzverbindung fehlgeschlagen");
+    Serial.println("\n Connection to home WiFi failed");
   }
 }
+
 void setShellyBulbColor(int r, int g, int b) {
   connectToShellyBulbWiFi();
 
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("❌ Keine WLAN-Verbindung zur ShellyBulb");
+    Serial.println(" no connection to ShellyBulb WiFi");
+    connectToHomeWiFi();
     return;
   }
 
   HTTPClient http;
 
-  // Setze RGB-Modus + Farbe + Helligkeit (100 %)
+  // set RGB color
   String url = String("http://") + shellyBulbIP +
                "/light/0?turn=on&mode=color&red=" + String(r) +
                "&green=" + String(g) +
                "&blue=" + String(b) +
-               "&gain=100";  // oder: "&brightness=100" je nach Firmware
+               "&gain=100";  // or: "&brightness=100" je nach Firmware
 
-  Serial.println("📡 Sende an ShellyBulb: " + url);
+  Serial.println("send to ShellyBulb: " + url);
   http.begin(url);
   int httpCode = http.GET();
 
   if (httpCode > 0) {
-    Serial.printf("💡 RGB gesetzt: R=%d G=%d B=%d (HTTP %d)\n", r, g, b, httpCode);
+    Serial.printf("RGB set: R=%d G=%d B=%d (HTTP %d)\n", r, g, b, httpCode);
   } else {
-    Serial.printf("❌ Fehler beim Setzen der Farbe: %s\n", http.errorToString(httpCode).c_str());
+    Serial.printf("Error setting the color: %s\n", http.errorToString(httpCode).c_str());
   }
 
   http.end();

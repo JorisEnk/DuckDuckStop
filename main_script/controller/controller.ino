@@ -1,3 +1,4 @@
+// Main script for the ESP32 controller
 #include <WiFi.h>
 #include <WebServer.h>
 #include <Preferences.h>
@@ -11,18 +12,18 @@ const int daylightOffset_sec = 3600;
 Preferences preferences;
 WebServer server(80);
 
-// Globale Konfigurationswerte
+// global cofiguratons
 String homeSSID, homePASS;
 String shellyBulbSSID, shellyBulbPASS, shellyBulbIP;
 
-// Zugriff für andere Module (extern)
+// access points
 String getShellySSID() { return shellyBulbSSID; }
 String getShellyPASS() { return shellyBulbPASS; }
 String getShellyIP()   { return shellyBulbIP; }
 String getHomeSSID()   { return homeSSID; }
 String getHomePASS()   { return homePASS; }
 
-// HTML-Formular für Setup
+// HTML form for configuration
 const char* html_form = R"rawliteral(
 <html>
   <head><title>ESP32 Setup</title></head>
@@ -54,57 +55,57 @@ void setup() {
   delay(1000);
 
   if (!loadCredentials()) {
-    Serial.println("⚠️ Keine gespeicherten Zugangsdaten – Setup-Modus aktiv");
+    Serial.println("no credentials found, starting AP mode");
     startAPMode();
     return;
   }
 
   WiFi.begin(homeSSID.c_str(), homePASS.c_str());
-  Serial.printf("🔌 Verbinde mit WLAN: %s\n", homeSSID.c_str());
+  Serial.printf("connecting to wifi: %s\n", homeSSID.c_str());
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
-  Serial.println("\n✅ WLAN verbunden.");
+  Serial.println("\n Wifi connected.");
 
   configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
   struct tm timeinfo;
   if (!getLocalTime(&timeinfo)) {
-    Serial.println("❌ Keine Zeit verfügbar");
+    Serial.println("access denied");
     return;
   }
-  Serial.println("🕒 Zeit synchronisiert");
+  Serial.println("synchronized time");
 }
 
 // ---------------- LOOP -------------------
 
 void loop() {
   if (WiFi.getMode() == WIFI_AP) {
-    server.handleClient();  // Access Point läuft
+    server.handleClient();  // Access Point Mode
     return;
   }
 
-  // Deine normale Funktionalität
+  // operations
   float price = getCurrentPrice();
   float radiation = getCurrentRadiation();
   float grid = getForecastLoad();
   float wind = getAverageWindNext8Hours();
 
-  Serial.printf("\n🌬️ Wind: %.2f km/h, ☀️ Strahlung: %.2f W/m², ⚡ Netzlast: %.2f MW\n", wind, radiation, grid);
+  Serial.printf("\n wind: %.2f km/h, radiation: %.2f W/m², grid: %.2f MW\n", wind, radiation, grid);
 
   int r, g, b;
   berechneRGB(radiation, wind, grid, &r, &g, &b);
   setShellyBulbColor(r, g, b);
 
-  delay(60 * 1000);  // alle Minute neu bewerten
+  delay(60 * 1000);  // wait 1 minute
 }
 
-// ---------------- FUNKTIONEN -------------------
+// ---------------- FUNCTIONS -------------------
 
 void startAPMode() {
   WiFi.softAP("ESP32-Setup", "12345678");
   IPAddress ip = WiFi.softAPIP();
-  Serial.println("🌐 Access Point gestartet unter: http://" + ip.toString());
+  Serial.println("Access Point started: http://" + ip.toString());
 
   server.on("/", []() {
     server.send(200, "text/html", html_form);
@@ -125,13 +126,13 @@ void startAPMode() {
     preferences.putString("shellyIP", shellyBulbIP);
     preferences.end();
 
-    server.send(200, "text/html", "<h2>✅ Gespeichert! Neustart...</h2>");
+    server.send(200, "text/html", "<h2> saved! restart...</h2>");
     delay(2000);
     ESP.restart();
   });
 
   server.onNotFound([]() {
-    server.send(404, "text/plain", "❌ Not Found");
+    server.send(404, "text/plain", "Not Found");
   });
 
   server.begin();
@@ -156,12 +157,12 @@ float constrainFloat(float value, float min, float max) {
 }
 
 void berechneRGB(float radiation, float wind, float grid, int* r, int* g, int* b) {
-// Normierungen
+// Normination
 float rad_norm = constrainFloat(radiation / 1000.0, 0.0, 1.0);
 float wind_norm = constrainFloat((wind - 10.0) / 80.0, 0.0, 1.0);
 float grid_norm = constrainFloat((grid - 3500.0) / 3500.0, 0.0, 1.0);
 
-// Sonderfall: Alles schlecht → Rot
+// special case: if all values are low
 if (rad_norm < 0.05 && wind_norm < 0.05 && grid_norm < 0.05) {
     *r = 255;
     *g = 255;
@@ -169,7 +170,7 @@ if (rad_norm < 0.05 && wind_norm < 0.05 && grid_norm < 0.05) {
     return;
 }else{
   float qualitaet = 0.5 * rad_norm + 0.5 * wind_norm;
-     // RGB-Berechnung
+     // RGB-Calculation
     *b = 0;
     *r = (int)(255.0 * fabs(grid_norm - qualitaet));
     *g = (int)(255.0 * qualitaet);
