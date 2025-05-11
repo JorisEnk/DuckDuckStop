@@ -1,19 +1,19 @@
-# 🚀 Optimizing Small-Scale Storage and Plug-In Solar for Grid Stability and Cost Savings
+# Optimizing Small-Scale Storage and Plug-In Solar for Grid Stability and Cost Savings
 
 ## 🔍 Problem Statement  
 Small-scale plug-in solar systems with battery storage are often not optimized to support grid stability. Prosumers typically charge batteries based on electricity prices rather than real-time grid conditions, potentially contributing to grid stress during peak solar production. Currently, there are no simple dynamic incentives or guidance for prosumers to adjust behavior to align with grid needs, resulting in inefficiencies and missed opportunities to use excess renewable energy.
 
-## 🎯 Hackathon Challenge  
+## Hackathon Challenge  
 **How might we enable prosumers to optimize their energy use and feed-in behavior to support grid stability, lower CO₂ emissions, and increase financial benefits—while ensuring the solution is simple, affordable, and scalable?**
 
-## 📊 Data & Tools Used
+## Data & Tools Used
 - Real-time electricity price and grid demand APIs  
 - Weather forecast data for solar generation prediction  
 - Battery & inverter data (where accessible)  
 - Smart home hardware (e.g. Shelly bulbs, ESP32, sensors)  
 - Home Assistant + AppDaemon (early prototype phase)
 
-## 💡 Our Journey & Learnings
+## Our Journey & Learnings
 
 We initially focused on developing an automated solution using **Home Assistant** with **AppDaemon**, integrating smart home sensors, grid data, and solar predictions to control battery feed-in behavior. However, we encountered several technical and practical limitations:
 
@@ -24,7 +24,7 @@ We initially focused on developing an automated solution using **Home Assistant*
 
 Following feedback and brainstorming sessions—including an insightful discussion with Sebastian—we pivoted toward a more **accessible, low-tech, and user-centric** approach.
 
-## ✅ Final Solution: Visual Feed-In Recommendations via ESP32 & Smart Bulbs
+## Final Solution: Visual Feed-In Recommendations via ESP32 & Smart Bulbs
 
 We developed a lightweight, accessible system using a **low-cost ESP32 microcontroller** and **two Shelly smart bulbs**. Here’s how it works:
 
@@ -42,7 +42,7 @@ We developed a lightweight, accessible system using a **low-cost ESP32 microcont
 - **Scalability**: Easily replicable and adaptable for various home setups  
 - **Open Source**: Fully documented and modifiable for community development
 
-## 🏆 Success Criteria Met
+## Success Criteria Met
 - ✅ Supports grid stability with dynamic recommendations  
 - ✅ Reduces CO₂ emissions by aligning with green energy availability  
 - ✅ Improves financial outcomes for prosumers  
