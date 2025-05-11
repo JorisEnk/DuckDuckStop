@@ -1,9 +1,9 @@
-// Script to get the weather data from Open Meteo API
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
-const char* latitude = "47.9990";
-const char* longitude = "7.8421";
+// Referenz aus main.ino
+extern String getLatitude();
+extern String getLongitude();
 
 float getCurrentRadiation() {
   struct tm timeinfo;
@@ -17,8 +17,8 @@ float getCurrentRadiation() {
   strftime(now_iso, sizeof(now_iso), "%Y-%m-%dT%H:00", &timeinfo);
 
   String url = "https://api.open-meteo.com/v1/forecast?";
-  url += "latitude=" + String(latitude);
-  url += "&longitude=" + String(longitude);
+  url += "latitude=" + getLatitude();
+  url += "&longitude=" + getLongitude();
   url += "&hourly=shortwave_radiation";
   url += "&start_date=" + String(date_today);
   url += "&end_date=" + String(date_tomorrow);
@@ -74,8 +74,8 @@ float getAverageWindNext8Hours() {
   strftime(now_iso, sizeof(now_iso), "%Y-%m-%dT%H:00", &timeinfo);
 
   String url = "https://api.open-meteo.com/v1/forecast?";
-  url += "latitude=" + String(latitude);
-  url += "&longitude=" + String(longitude);
+  url += "latitude=" + getLatitude();
+  url += "&longitude=" + getLongitude();
   url += "&hourly=wind_speed_120m";
   url += "&start_date=" + String(date_today);
   url += "&end_date=" + String(date_tomorrow);
