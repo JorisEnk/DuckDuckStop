@@ -66,7 +66,7 @@ git clone https://github.com/JorisEnk/DuckDuckStop.git
 ### 3. Connect ESP32 to Your Home Wi-Fi
 
 - After flashing, the ESP32 will start as a **Wi-Fi access point** (e.g., `ESP32-Setup`).
-- Connect your phone or laptop to that Wi-Fi.
+- Connect your phone or laptop to that Wi-Fi (password: `12345678`).
 - A captive portal or setup page should appear automatically. If not, go to `http://192.168.4.1`.
 - Enter:
   - Your **home Wi-Fi SSID and password**
