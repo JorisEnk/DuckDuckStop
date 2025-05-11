@@ -47,3 +47,43 @@ We developed a lightweight, accessible system using a **low-cost ESP32 microcont
 - ✅ Reduces CO₂ emissions by aligning with green energy availability  
 - ✅ Improves financial outcomes for prosumers  
 - ✅ Simple, low-cost, open-source, and user-friendly
+
+
+## Setup Instructions
+
+To get started with the ESP32 + Shelly bulb system, follow these steps:
+
+### 1. Clone This Repository
+
+```bash
+git clone https://github.com/JorisEnk/DuckDuckStop.git
+```
+
+### 2. Flash the ESP32
+
+1. Open the Arduino IDE.
+2. Connect your ESP32 via USB.
+3. Navigate to `main_script/controllter/controller.ino` in this repo.
+4. Select the correct ESP32 board under **Tools > Board** (e.g., “ESP32 Dev Module”).
+5. Choose the correct COM port under **Tools > Port**.
+6. Click **Upload** to flash the firmware to your ESP32.
+
+>  *If you're new to ESP32 setup in Arduino IDE, refer to [this guide](https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/).*
+
+### 3. Connect ESP32 to Your Home Wi-Fi
+
+- After flashing, the ESP32 will start as a **Wi-Fi access point** (e.g., `ESP32-Setup`).
+- Connect your phone or laptop to that Wi-Fi.
+- A captive portal or setup page should appear automatically. If not, go to `http://192.168.4.1`.
+- Enter:
+  - Your **home Wi-Fi SSID and password**
+  - **Shelly Bulb IP address or SSID**:  
+    Usually `192.168.33.1` by default. If this doesn't work, please refer to the official **Shelly Bulb documentation** or your local network settings for the correct address.
+
+Click **Connect**.
+
+### 4. Watch the Bulbs React
+Once connected to the internet, the ESP32 will begin pulling real-time grid and weather data. The Shelly smart bulbs will reflect the current feed-in recommendation through simple color-coded signals.
+
+> 🎯 *This lightweight setup gives you real-time visual feedback without needing an app, Home Assistant, or other automation platforms.*
+
