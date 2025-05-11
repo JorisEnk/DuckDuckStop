@@ -42,13 +42,6 @@ We developed a lightweight, accessible system using a **low-cost ESP32 microcont
 - **Scalability**: Easily replicable and adaptable for various home setups  
 - **Open Source**: Fully documented and modifiable for community development
 
-## Success Criteria Met
-- ✅ Supports grid stability with dynamic recommendations  
-- ✅ Reduces CO₂ emissions by aligning with green energy availability  
-- ✅ Improves financial outcomes for prosumers  
-- ✅ Simple, low-cost, open-source, and user-friendly
-
-
 ## Setup Instructions
 
 To get started with the ESP32 + Shelly bulb system, follow these steps:
