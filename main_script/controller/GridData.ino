@@ -1,79 +1,113 @@
+#include <WiFi.h>
 #include <HTTPClient.h>
-#include <ArduinoJson.h>
-#include <time.h>
 
-float getForecastLoad() {
-  // URL vorbereiten (Datum von heute bis morgen)
-  time_t now = time(nullptr);
-  struct tm* timeinfo = gmtime(&now);
+extern String shellyBulbSSID;
+extern String shellyBulbPASS;
+extern String homeSSID;
+extern String homePASS;
+extern String shellyBulbIP;
 
-  char from_buf[11], to_buf[11];
-  strftime(from_buf, sizeof(from_buf), "%Y-%m-%d", timeinfo);
 
-  timeinfo->tm_mday += 1;
-  mktime(timeinfo);  // Normalisiert Datum
-  strftime(to_buf, sizeof(to_buf), "%Y-%m-%d", timeinfo);
+void connectToShellyBulbWiFi() {
+  Serial.println("🔄 Verbinde mit ShellyBulb-WLAN...");
+  Serial.println("📶 SSID: " + shellyBulbSSID);
+  Serial.println("🔑 PASS: " + shellyBulbPASS);
 
-  String url = String("https://api.stromgedacht.de/v1/forecast?zip=79100&from=") + from_buf + "&to=" + to_buf;
+  WiFi.disconnect(true);
+  delay(500);
+  WiFi.begin(shellyBulbSSID.c_str(), shellyBulbPASS.c_str());
+
+  for (int i = 0; i < 20 && WiFi.status() != WL_CONNECTED; i++) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("\n✅ Verbunden mit ShellyBulb");
+  } else {
+    Serial.println("\n❌ Verbindung zur ShellyBulb fehlgeschlagen");
+  }
+}
+
+
+void connectToHomeWiFi() {
+  Serial.println("🔄 Verbinde mit Heim-WLAN...");
+  Serial.println("📶 SSID: " + homeSSID);
+  Serial.println("🔑 PASS: " + homePASS);
+
+  Serial.println("🔄 Verbinde zurück zum Heimnetz...");
+  WiFi.disconnect(true);
+  delay(500);
+  WiFi.begin(homeSSID.c_str(), homePASS.c_str());
+
+  for (int i = 0; i < 20 && WiFi.status() != WL_CONNECTED; i++) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("\n✅ Zurück im Heimnetz");
+  } else {
+    Serial.println("\n❌ Heimnetzverbindung fehlgeschlagen");
+  }
+}
+
+void setShellyBulbColor(int r, int g, int b) {
+  connectToShellyBulbWiFi();
+
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("❌ Keine WLAN-Verbindung zur ShellyBulb");
+    connectToHomeWiFi();
+    return;
+  }
 
   HTTPClient http;
+
+  // Setze RGB-Modus + Farbe + Helligkeit (100 %)
+  String url = String("http://") + shellyBulbIP +
+               "/light/0?turn=on&mode=color&red=" + String(r) +
+               "&green=" + String(g) +
+               "&blue=" + String(b) +
+               "&gain=100";  // oder: "&brightness=100" je nach Firmware
+
+  Serial.println("📡 Sende an ShellyBulb: " + url);
   http.begin(url);
   int httpCode = http.GET();
 
-  if (httpCode != 200) {
-    Serial.printf("HTTP Fehler: %d\n", httpCode);
-    http.end();
-    return -1.0;
+  if (httpCode > 0) {
+    Serial.printf("💡 RGB gesetzt: R=%d G=%d B=%d (HTTP %d)\n", r, g, b, httpCode);
+  } else {
+    Serial.printf("❌ Fehler beim Setzen der Farbe: %s\n", http.errorToString(httpCode).c_str());
   }
 
-  String payload = http.getString();
   http.end();
 
-  const size_t capacity = 64 * 1024;
-  DynamicJsonDocument doc(capacity);
-  DeserializationError error = deserializeJson(doc, payload);
+  connectToHomeWiFi();
+}
 
-  if (error) {
-    Serial.print("JSON Fehler: ");
-    Serial.println(error.f_str());
-    return -1.0;
+
+// Glühbirne schalten
+void toggleShellyBulb(bool state) {
+  connectToShellyBulbWiFi();
+
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("❌ Keine WLAN-Verbindung zur ShellyBulb");
+    return;
   }
 
-  JsonArray loadArray = doc["load"];
-  now = time(nullptr);  // aktueller UTC-Zeitpunkt
-  time_t future_limit = now + 3 * 3600;  // +3 Stunden
+  HTTPClient http;
+  String url = String("http://") + shellyBulbIP + "/light/0?turn=" + (state ? "on" : "off");
 
-  float sum = 0.0;
-  int count = 0;
+  http.begin(url);
+  int httpCode = http.GET();
 
-  for (JsonObject entry : loadArray) {
-    const char* dt_str = entry["dateTime"];
-    float value = entry["value"];
-
-    struct tm dt_tm = {};
-    strptime(dt_str, "%Y-%m-%dT%H:%M:%S", &dt_tm);
-    time_t dt_time = mktime(&dt_tm);
-
-    // Z ist UTC → kein Offset nötig
-    if (dt_time >= now && dt_time <= future_limit) {
-      sum += value;
-      count++;
-    }
-  }
-
-  if (count == 0) {
-    Serial.println("Keine Daten im gewünschten Zeitfenster gefunden.");
-    return -1.0;
-  }
-
-  float avg = sum / count;
-  Serial.printf("Durchschnittliche Netzlast (nächste 3h): %.2f MW\n", avg);
-
-  if (avg > 5500.0) {
-    Serial.println("Auslastung: HOCH");
+  if (httpCode > 0) {
+    Serial.printf("💡 ShellyBulb geschaltet: %s (HTTP %d)\n", state ? "an" : "aus", httpCode);
   } else {
-    Serial.println("Auslastung: NICHT hoch");
+    Serial.printf("❌ Fehler beim Schalten: %s\n", http.errorToString(httpCode).c_str());
   }
 
-  return avg;
+  http.end();
+
+  connectToHomeWiFi();  // wieder zurück ins Heimnetz
 }

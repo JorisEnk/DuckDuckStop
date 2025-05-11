@@ -1,41 +1,72 @@
 #include <WiFi.h>
+#include <WebServer.h>
+#include <Preferences.h>
 #include <time.h>
-
-// WLAN
-const char* ssid = "Häck2025";
-const char* password = "B#campus!";
 
 // NTP
 const char* ntpServer = "pool.ntp.org";
 const long gmtOffset_sec = 3600;
 const int daylightOffset_sec = 3600;
 
-// Grenzwerte
-const float priceLimit = 150.0;        // €/MWh
-const float radiationLimit = 200.0;    // W/m²
+Preferences preferences;
+WebServer server(80);
 
-// Externe Funktionen
-extern float getCurrentPrice();
-extern float getCurrentRadiation();
-extern void toggleShelly(bool state);
-extern void toggleShellyBulb(bool state);
-extern float getForecastLoad();
-extern float getAverageWindNext8Hours();
+// Globale Konfigurationswerte
+String homeSSID, homePASS;
+String shellyBulbSSID, shellyBulbPASS, shellyBulbIP;
 
-void setup() {
+// Zugriff für andere Module (extern)
+String getShellySSID() { return shellyBulbSSID; }
+String getShellyPASS() { return shellyBulbPASS; }
+String getShellyIP()   { return shellyBulbIP; }
+String getHomeSSID()   { return homeSSID; }
+String getHomePASS()   { return homePASS; }
+
+// HTML-Formular für Setup
+const char* html_form = R"rawliteral(
+<html>
+  <head><title>ESP32 Setup</title></head>
+  <body>
+    <h2>WLAN-Konfiguration</h2>
+    <form action="/save" method="get">
+      <b>Heimnetzwerk</b><br>
+      SSID: <input name="homeSSID"><br>
+      Passwort: <input name="homePASS" type="password"><br><br>
+
+      <b>Shelly Bulb</b><br>
+      SSID: <input name="shellySSID"><br>
+      Passwort: <input name="shellyPASS" type="password"><br>
+      IP-Adresse: <input name="shellyIP"><br><br>
+
+      <input type="submit" value="Speichern">
+    </form>
+  </body>
+</html>
+)rawliteral";
+
+// ---------------- SETUP -------------------
+
+void setup() { 
+  preferences.begin("wifi", false);
+    //preferences.clear();
+    //preferences.end();
   Serial.begin(115200);
   delay(1000);
 
-  // WLAN verbinden
-  WiFi.begin(ssid, password);
-  Serial.print("🔌 Verbinde mit WLAN");
+  if (!loadCredentials()) {
+    Serial.println("⚠️ Keine gespeicherten Zugangsdaten – Setup-Modus aktiv");
+    startAPMode();
+    return;
+  }
+
+  WiFi.begin(homeSSID.c_str(), homePASS.c_str());
+  Serial.printf("🔌 Verbinde mit WLAN: %s\n", homeSSID.c_str());
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
   Serial.println("\n✅ WLAN verbunden.");
 
-  // Zeit synchronisieren
   configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
   struct tm timeinfo;
   if (!getLocalTime(&timeinfo)) {
@@ -45,41 +76,15 @@ void setup() {
   Serial.println("🕒 Zeit synchronisiert");
 }
 
-// Hilfsfunktion zum Beschränken eines Werts zwischen min und max
-float constrainFloat(float value, float min, float max) {
-  if (value < min) return min;
-  if (value > max) return max;
-  return value;
-}
-
-void berechneRGB(float radiation, float wind, float grid, int* r, int* g, int* b) {
-  int gridBool = (grid > 5000) ? 1 : 0;
-  int radiationBool = (radiation > 250) ? 1 : 0;
-  int windBool = (wind > 10 && wind < 90) ? 1 : 0;
-  int erneuerbarBool = radiationBool || windBool;
-
-  if (!erneuerbarBool) {
-      *r = 255; *g = 0; *b = 0;
-      return;
-  }
-
-  float radQual = constrainFloat(radiation / 1000.0, 0.0, 1.0);
-  float windQual = constrainFloat((wind - 10.0) / 80.0, 0.0, 1.0);
-  float qualitaet = 0.5 * radQual + 0.5 * windQual;
-
-  if (gridBool) {
-      *r = (int)(50 * (1 - qualitaet));
-      *g = (int)(180 + 75 * qualitaet);
-      *b = 0;
-  } else {
-      *r = 255;
-      *g = (int)(230 - 80 * (1 - qualitaet));
-      *b = 0;
-  }
-}
-
+// ---------------- LOOP -------------------
 
 void loop() {
+  if (WiFi.getMode() == WIFI_AP) {
+    server.handleClient();  // Access Point läuft
+    return;
+  }
+
+  // Deine normale Funktionalität
   float price = getCurrentPrice();
   float radiation = getCurrentRadiation();
   float grid = getForecastLoad();
@@ -91,6 +96,83 @@ void loop() {
   berechneRGB(radiation, wind, grid, &r, &g, &b);
   setShellyBulbColor(r, g, b);
 
-  delay(1 * 60 * 1000);  // alle 30 Minuten wiederholen
+  delay(60 * 1000);  // alle Minute neu bewerten
 }
 
+// ---------------- FUNKTIONEN -------------------
+
+void startAPMode() {
+  WiFi.softAP("ESP32-Setup", "12345678");
+  IPAddress ip = WiFi.softAPIP();
+  Serial.println("🌐 Access Point gestartet unter: http://" + ip.toString());
+
+  server.on("/", []() {
+    server.send(200, "text/html", html_form);
+  });
+
+  server.on("/save", []() {
+    homeSSID = server.arg("homeSSID");
+    homePASS = server.arg("homePASS");
+    shellyBulbSSID = server.arg("shellySSID");
+    shellyBulbPASS = server.arg("shellyPASS");
+    shellyBulbIP = server.arg("shellyIP");
+
+    preferences.begin("wifi", false);
+    preferences.putString("homeSSID", homeSSID);
+    preferences.putString("homePASS", homePASS);
+    preferences.putString("shellySSID", shellyBulbSSID);
+    preferences.putString("shellyPASS", shellyBulbPASS);
+    preferences.putString("shellyIP", shellyBulbIP);
+    preferences.end();
+
+    server.send(200, "text/html", "<h2>✅ Gespeichert! Neustart...</h2>");
+    delay(2000);
+    ESP.restart();
+  });
+
+  server.onNotFound([]() {
+    server.send(404, "text/plain", "❌ Not Found");
+  });
+
+  server.begin();
+}
+
+bool loadCredentials() {
+  preferences.begin("wifi", true);
+  homeSSID       = preferences.getString("homeSSID", "");
+  homePASS       = preferences.getString("homePASS", "");
+  shellyBulbSSID = preferences.getString("shellySSID", "");
+  shellyBulbPASS = preferences.getString("shellyPASS", "");
+  shellyBulbIP   = preferences.getString("shellyIP", "");
+  preferences.end();
+
+  return (homeSSID.length() > 0 && shellyBulbSSID.length() > 0 && shellyBulbIP.length() > 0);
+}
+
+float constrainFloat(float value, float min, float max) {
+  if (value < min) return min;
+  if (value > max) return max;
+  return value;
+}
+
+void berechneRGB(float radiation, float wind, float grid, int* r, int* g, int* b) {
+// Normierungen
+float rad_norm = constrainFloat(radiation / 1000.0, 0.0, 1.0);
+float wind_norm = constrainFloat((wind - 10.0) / 80.0, 0.0, 1.0);
+float grid_norm = constrainFloat((grid - 3500.0) / 3500.0, 0.0, 1.0);
+
+// Sonderfall: Alles schlecht → Rot
+if (rad_norm < 0.05 && wind_norm < 0.05 && grid_norm < 0.05) {
+    *r = 255;
+    *g = 255;
+    *b = 0;
+    return;
+}else{
+  float qualitaet = 0.5 * rad_norm + 0.5 * wind_norm;
+     // RGB-Berechnung
+    *b = 0;
+    *r = (int)(255.0 * fabs(grid_norm - qualitaet));
+    *g = (int)(255.0 * qualitaet);
+}
+
+}
