@@ -75,8 +75,8 @@ git clone https://github.com/JorisEnk/DuckDuckStop.git
 
 Click **Connect**.
 
-### 4. Watch the Bulbs React
-Once connected to the internet, the ESP32 will begin pulling real-time grid and weather data. The Shelly smart bulbs will reflect the current feed-in recommendation through simple color-coded signals.
+### 4. Watch the Bulb React
+Once connected to the internet, the ESP32 will begin pulling real-time grid and weather data. The Shelly smart bulb will reflect the current feed-in recommendation through simple color-coded signals.
 
 >  *This lightweight setup gives you real-time visual feedback without needing an app, Home Assistant, or other automation platforms.*
 
