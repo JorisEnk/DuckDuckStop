@@ -1,21 +1,21 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 
-// WLAN-Daten
-const char* homeSSID = "TP-Link_F574";
-const char* homePASS = "38433948";
+extern String shellyBulbSSID;
+extern String shellyBulbPASS;
+extern String homeSSID;
+extern String homePASS;
+extern String shellyBulbIP;
 
-const char* shellyBulbSSID = "shellycolorbulb-4091515826AA";
-const char* shellyBulbPASS = "";
 
-const char* shellyBulbIP = "192.168.33.1";
-
-// Verbinde mit Shelly-Bulb-WLAN
 void connectToShellyBulbWiFi() {
   Serial.println("🔄 Verbinde mit ShellyBulb-WLAN...");
+  Serial.println("📶 SSID: " + shellyBulbSSID);
+  Serial.println("🔑 PASS: " + shellyBulbPASS);
+
   WiFi.disconnect(true);
   delay(500);
-  WiFi.begin(shellyBulbSSID, shellyBulbPASS);
+  WiFi.begin(shellyBulbSSID.c_str(), shellyBulbPASS.c_str());
 
   for (int i = 0; i < 20 && WiFi.status() != WL_CONNECTED; i++) {
     delay(500);
@@ -29,12 +29,16 @@ void connectToShellyBulbWiFi() {
   }
 }
 
-// Verbinde zurück ins Heimnetz
+
 void connectToHomeWiFi() {
+  Serial.println("🔄 Verbinde mit Heim-WLAN...");
+  Serial.println("📶 SSID: " + homeSSID);
+  Serial.println("🔑 PASS: " + homePASS);
+
   Serial.println("🔄 Verbinde zurück zum Heimnetz...");
   WiFi.disconnect(true);
   delay(500);
-  WiFi.begin(homeSSID, homePASS);
+  WiFi.begin(homeSSID.c_str(), homePASS.c_str());
 
   for (int i = 0; i < 20 && WiFi.status() != WL_CONNECTED; i++) {
     delay(500);
@@ -47,11 +51,13 @@ void connectToHomeWiFi() {
     Serial.println("\n❌ Heimnetzverbindung fehlgeschlagen");
   }
 }
+
 void setShellyBulbColor(int r, int g, int b) {
   connectToShellyBulbWiFi();
 
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("❌ Keine WLAN-Verbindung zur ShellyBulb");
+    connectToHomeWiFi();
     return;
   }
 
