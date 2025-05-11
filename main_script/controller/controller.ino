@@ -53,7 +53,6 @@ const char* html_form = R"rawliteral(
 
 void setup() { 
   preferences.begin("wifi", false);
-  pereference.clear();
   Serial.begin(115200);
   delay(1000);
 
