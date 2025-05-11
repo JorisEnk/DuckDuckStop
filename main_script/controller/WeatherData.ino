@@ -1,3 +1,4 @@
+// Script to get the weather data from Open Meteo API
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
@@ -28,7 +29,7 @@ float getCurrentRadiation() {
   int httpCode = http.GET();
 
   if (httpCode != 200) {
-    Serial.printf("Wetter HTTP Fehler: %d\n", httpCode);
+    Serial.printf("weather http error: %d\n", httpCode);
     http.end();
     return 0.0;
   }
@@ -85,7 +86,7 @@ float getAverageWindNext8Hours() {
   int httpCode = http.GET();
 
   if (httpCode != 200) {
-    Serial.printf("Wetter HTTP Fehler: %d\n", httpCode);
+    Serial.printf("weather http error: %d\n", httpCode);
     http.end();
     return 0.0;
   }

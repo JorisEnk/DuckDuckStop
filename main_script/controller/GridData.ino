@@ -1,9 +1,10 @@
+// Get the current grid data from Stromgedacht API
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include <time.h>
 
 float getForecastLoad() {
-  // URL vorbereiten (Datum von heute bis morgen)
+  // URL 
   time_t now = time(nullptr);
   struct tm* timeinfo = gmtime(&now);
 
@@ -11,7 +12,7 @@ float getForecastLoad() {
   strftime(from_buf, sizeof(from_buf), "%Y-%m-%d", timeinfo);
 
   timeinfo->tm_mday += 1;
-  mktime(timeinfo);  // Normalisiert Datum
+  mktime(timeinfo);  // normalize the time structure
   strftime(to_buf, sizeof(to_buf), "%Y-%m-%d", timeinfo);
 
   String url = String("https://api.stromgedacht.de/v1/forecast?zip=79100&from=") + from_buf + "&to=" + to_buf;
@@ -21,7 +22,7 @@ float getForecastLoad() {
   int httpCode = http.GET();
 
   if (httpCode != 200) {
-    Serial.printf("HTTP Fehler: %d\n", httpCode);
+    Serial.printf("HTTP error: %d\n", httpCode);
     http.end();
     return -1.0;
   }
@@ -34,14 +35,14 @@ float getForecastLoad() {
   DeserializationError error = deserializeJson(doc, payload);
 
   if (error) {
-    Serial.print("JSON Fehler: ");
+    Serial.print("JSON error: ");
     Serial.println(error.f_str());
     return -1.0;
   }
 
   JsonArray loadArray = doc["load"];
-  now = time(nullptr);  // aktueller UTC-Zeitpunkt
-  time_t future_limit = now + 3 * 3600;  // +3 Stunden
+  now = time(nullptr);  // current time in seconds since epoch
+  time_t future_limit = now + 3 * 3600;  // +3 hours
 
   float sum = 0.0;
   int count = 0;
@@ -54,7 +55,7 @@ float getForecastLoad() {
     strptime(dt_str, "%Y-%m-%dT%H:%M:%S", &dt_tm);
     time_t dt_time = mktime(&dt_tm);
 
-    // Z ist UTC → kein Offset nötig
+    // Z no t in UTC
     if (dt_time >= now && dt_time <= future_limit) {
       sum += value;
       count++;
@@ -62,17 +63,17 @@ float getForecastLoad() {
   }
 
   if (count == 0) {
-    Serial.println("Keine Daten im gewünschten Zeitfenster gefunden.");
+    Serial.println("No data available for the next 3 hours");
     return -1.0;
   }
 
   float avg = sum / count;
-  Serial.printf("Durchschnittliche Netzlast (nächste 3h): %.2f MW\n", avg);
+  Serial.printf("avg grid (next 3 h): %.2f MW\n", avg);
 
   if (avg > 5500.0) {
-    Serial.println("Auslastung: HOCH");
+    Serial.println("grid: high");
   } else {
-    Serial.println("Auslastung: NICHT hoch");
+    Serial.println("grid: not high");
   }
 
   return avg;

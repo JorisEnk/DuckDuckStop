@@ -1,3 +1,4 @@
+// Script to get control the Shelly Bulb
 #include <WiFi.h>
 #include <HTTPClient.h>
 
@@ -91,7 +92,7 @@ void toggleShellyBulb(bool state) {
   connectToShellyBulbWiFi();
 
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("❌ Keine WLAN-Verbindung zur ShellyBulb");
+    Serial.println("no connection to ShellyBulb");
     return;
   }
 
@@ -102,12 +103,12 @@ void toggleShellyBulb(bool state) {
   int httpCode = http.GET();
 
   if (httpCode > 0) {
-    Serial.printf("💡 ShellyBulb geschaltet: %s (HTTP %d)\n", state ? "an" : "aus", httpCode);
+    Serial.printf("ShellyBulb set: %s (HTTP %d)\n", state ? "an" : "aus", httpCode);
   } else {
-    Serial.printf("❌ Fehler beim Schalten: %s\n", http.errorToString(httpCode).c_str());
+    Serial.printf("error setting ShellyBulb: %s\n", http.errorToString(httpCode).c_str());
   }
 
   http.end();
 
-  connectToHomeWiFi();  // wieder zurück ins Heimnetz
+  connectToHomeWiFi();  // return to home WiFi
 }

@@ -1,3 +1,4 @@
+// Script to get the current energy price from Awattar API
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
@@ -5,13 +6,13 @@ const char* awattar_url = "https://api.awattar.de/v1/marketdata";
 
 float getCurrentPrice() {
   HTTPClient http;
-  http.begin(awattar_url);  // HTTPS geht mit ESP32 (ab ESP32-Arduino v2.x)
+  http.begin(awattar_url);
   int httpCode = http.GET();
 
   if (httpCode == 200) {
     String payload = http.getString();
 
-    const size_t capacity = 32 * 1024; // ausreichend für viele Einträge
+    const size_t capacity = 32 * 1024; // 32 KB
     DynamicJsonDocument doc(capacity);
 
     DeserializationError error = deserializeJson(doc, payload);
@@ -22,7 +23,7 @@ float getCurrentPrice() {
     }
 
     JsonArray data = doc["data"];
-    Serial.println("\n📈 Strompreise von Awattar (€/MWh):\n");
+    Serial.println("\n Energyprice based on Awattar (€/MWh):\n");
 
     for (JsonObject entry : data) {
       long start_ms = entry["start_timestamp"];
@@ -44,7 +45,7 @@ float getCurrentPrice() {
     }
 
   } else {
-    Serial.printf("HTTP Fehler: %d\n", httpCode);
+    Serial.printf("HTTP Error: %d\n", httpCode);
     return 9999.0;
   }
 
