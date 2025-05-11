@@ -1,4 +1,0 @@
-toggle_shelly:
-  module: toggle_plug
-  class: TogglePlug
-  entity_id: shellyplugsg3_8cbfea9130b8_switch_0
